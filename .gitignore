@@ -1,0 +1,11 @@
+# Arquivos e pastas gerados pelo .NET
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Arquivo de backup
+HomeTask.csproj.bak
