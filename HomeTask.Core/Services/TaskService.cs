@@ -1,4 +1,5 @@
 ﻿using HomeTask.HomeTask.Core.Entities;
+using HomeTask.HomeTask.Core.Enums;
 using HomeTask.HomeTask.Core.Interfaces;
 
 namespace HomeTask.HomeTask.Core.Services
@@ -39,6 +40,24 @@ namespace HomeTask.HomeTask.Core.Services
                 throw new ArgumentException("O nome da tarefa é obrigatório.");
 
             await _taskRepository.UpdateAsync(task);
+        }
+
+
+        public async Task<bool> UpdateStatusAsync(Guid id, TaskState status)
+        {
+            if (!Enum.IsDefined(status))
+                throw new ArgumentException("Status inválido.");
+
+            var existingTask = await _taskRepository.GetByIdAsync(id);
+
+            if (existingTask == null)
+                return false;
+
+            existingTask.Status = status;
+
+            await _taskRepository.UpdateAsync(existingTask);
+
+            return true;
         }
 
         public async Task DeleteAsync(Guid id)

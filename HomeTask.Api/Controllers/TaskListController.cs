@@ -1,4 +1,5 @@
-﻿using HomeTask.HomeTask.Core.Entities;
+﻿using HomeTask.HomeTask.Core.Dtos;
+using HomeTask.HomeTask.Core.Entities;
 using HomeTask.HomeTask.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -103,6 +104,33 @@ namespace HomeTask.HomeTask.Api.Controllers
 
             return NoContent();
         }
+
+
+        /// <summary>
+        /// Atualiza somente o status de uma tarefa.
+        /// </summary>
+        /// <param name="id">Identificador da tarefa.</param>
+        /// <param name="request">Novo status da tarefa.</param>
+        /// <returns>Resultado da atualização.</returns>
+        [HttpPatch("{id}/status")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateStatus(
+            Guid id,
+            UpdateTaskStatusRequest request)
+        {
+            var updated = await _taskService.UpdateStatusAsync(
+                id,
+                request.Status
+            );
+
+            if (!updated)
+                return NotFound();
+
+            return NoContent();
+        }
+
 
         /// <summary>
         /// Exclui uma tarefa pelo identificador.
