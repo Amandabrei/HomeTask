@@ -1,6 +1,6 @@
 ﻿using HomeTask.HomeTask.Core.Enums;
 
-namespace HomeTask.HomeTask.Core.Dtos
+namespace HomeTask.HomeTask.Api.DTOs.Requests
 {
     public class UpdateTaskStatusRequest
     {

@@ -1,4 +1,5 @@
-﻿using HomeTask.HomeTask.Core.Dtos;
+﻿using HomeTask.HomeTask.Api.DTOs.Requests;
+using HomeTask.HomeTask.Api.DTOs.Responses;
 using HomeTask.HomeTask.Core.Entities;
 using HomeTask.HomeTask.Core.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -28,11 +29,14 @@ namespace HomeTask.HomeTask.Api.Controllers
         /// </summary>
         /// <returns>Lista de tarefas.</returns>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<TaskListResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAll()
         {
             var tasks = await _taskService.GetAllAsync();
-            return Ok(tasks);
+
+            var response = tasks.Select(MapToResponse);
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -41,7 +45,7 @@ namespace HomeTask.HomeTask.Api.Controllers
         /// <param name="id">Identificador único da tarefa.</param>
         /// <returns>Dados da tarefa encontrada.</returns>
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(TaskList), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TaskListResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -50,31 +54,33 @@ namespace HomeTask.HomeTask.Api.Controllers
             if (task == null)
                 return NotFound();
 
-            return Ok(task);
+            return Ok(MapToResponse(task));
         }
 
         /// <summary>
         /// Cadastra uma nova tarefa.
         /// </summary>
-        /// <param name="task">Dados da tarefa que será cadastrada.</param>
+        /// <param name="request">Dados da tarefa que será cadastrada.</param>
         /// <returns>Dados da tarefa criada.</returns>
         [HttpPost]
-        [ProducesResponseType(typeof(TaskList), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(TaskListResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create(TaskList task)
+        public async Task<IActionResult> Create(TaskListCreateRequest request)
         {
             var newTask = new TaskList(
-                task.NameTask,
-                task.Description,
-                task.DueDate
+                request.NameTask,
+                request.Description,
+                request.DueDate
             );
 
             await _taskService.AddAsync(newTask);
 
+            var response = MapToResponse(newTask);
+
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = newTask.Id },
-                newTask
+                response
             );
         }
 
@@ -82,29 +88,28 @@ namespace HomeTask.HomeTask.Api.Controllers
         /// Atualiza os dados de uma tarefa existente.
         /// </summary>
         /// <param name="id">Identificador da tarefa que será atualizada.</param>
-        /// <param name="task">Novos dados da tarefa.</param>
+        /// <param name="request">Novos dados da tarefa.</param>
         /// <returns>Resultado da atualização.</returns>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(
             Guid id,
-            TaskList task)
+            TaskListUpdateRequest request)
         {
-            if (id != task.Id)
-                return BadRequest("O ID da rota é diferente do ID da tarefa.");
-
             var existingTask = await _taskService.GetByIdAsync(id);
 
             if (existingTask == null)
                 return NotFound();
 
-            await _taskService.UpdateAsync(task);
+            existingTask.NameTask = request.NameTask;
+            existingTask.Description = request.Description;
+            existingTask.DueDate = request.DueDate;
+
+            await _taskService.UpdateAsync(existingTask);
 
             return NoContent();
         }
-
 
         /// <summary>
         /// Atualiza somente o status de uma tarefa.
@@ -131,7 +136,6 @@ namespace HomeTask.HomeTask.Api.Controllers
             return NoContent();
         }
 
-
         /// <summary>
         /// Exclui uma tarefa pelo identificador.
         /// </summary>
@@ -150,6 +154,20 @@ namespace HomeTask.HomeTask.Api.Controllers
             await _taskService.DeleteAsync(id);
 
             return NoContent();
+        }
+
+        private static TaskListResponse MapToResponse(TaskList task)
+        {
+            return new TaskListResponse
+            {
+                Id = task.Id,
+                NameTask = task.NameTask,
+                Description = task.Description,
+                CreatedAt = task.CreatedAt,
+                DueDate = task.DueDate,
+                Status = task.Status,
+                IsActive = task.IsActive
+            };
         }
     }
 }
